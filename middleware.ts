@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 type CookieToSet = {
   name: string;
@@ -13,6 +12,17 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
+  throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_URL");
+}
+
+if (!supabaseAnonKey) {
+  throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
+}
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
