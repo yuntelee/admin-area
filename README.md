@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Admin Area
 
-## Getting Started
+Next.js 16 starter app secured with Supabase Auth and Google sign-in, ready to deploy on Vercel.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router
+- Supabase Auth
+- Google OAuth
+- Vercel deployment target
+- Tailwind CSS
+
+## Environment variables
+
+Copy [.env.example](.env.example) to `.env.local` and fill in:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL`
+
+Local example:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a Supabase project.
+2. In Supabase, go to Authentication → Providers → Google.
+3. Enable Google and add your Google OAuth client ID and secret.
+4. Add these redirect URLs in Supabase:
+	- `http://localhost:3000/auth/callback`
+	- `https://YOUR-VERCEL-PROJECT.vercel.app/auth/callback`
+5. Add your Supabase project URL and anon key to `.env.local`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Run locally
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open `http://localhost:3000` and sign in with Google. Authenticated users are redirected to `/dashboard`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy to Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push the repository to GitHub.
+2. Import the project into Vercel.
+3. Add the same environment variables from `.env.local` in the Vercel project settings.
+4. Add your Vercel production callback URL to Supabase Google provider settings.
+5. Redeploy.
 
-## Deploy on Vercel
+## Important routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Landing page: [/](src/app/page.tsx)
+- Protected page: [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
+- OAuth callback: [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts)
+- Session middleware: [middleware.ts](middleware.ts)

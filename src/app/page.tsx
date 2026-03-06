@@ -1,65 +1,82 @@
-import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { signInWithGoogle } from "@/app/auth/actions";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#1f2937_0%,_#0f172a_35%,_#020617_100%)] text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:56px_56px] opacity-20" />
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.9fr]">
+          <section className="space-y-8">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-1 text-sm text-white/80 backdrop-blur">
+              Next.js + Supabase + Vercel
+            </span>
+            <div className="space-y-5">
+              <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+                A Google-authenticated admin area ready for deployment.
+              </h1>
+              <p className="max-w-2xl text-lg leading-8 text-slate-300">
+                This starter uses Supabase Auth with Google OAuth and protects the
+                app behind login before a user can reach the dashboard.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                Google sign-in
+              </div>
+              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                Server-rendered session checks
+              </div>
+              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                Vercel-ready setup
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl">
+            <div className="space-y-3">
+              <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-300">
+                Secure access
+              </p>
+              <h2 className="text-3xl font-semibold text-white">
+                Sign in with Google
+              </h2>
+              <p className="text-sm leading-6 text-slate-300">
+                Only authenticated users can access the dashboard route. Configure
+                your Supabase project keys and Google provider, then sign in.
+              </p>
+            </div>
+
+            <form action={signInWithGoogle} className="mt-8">
+              <button
+                type="submit"
+                className="flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100"
+              >
+                Continue with Google
+              </button>
+            </form>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-300">
+              After sign-in, users are redirected to the protected dashboard at{" "}
+              <Link className="font-semibold text-white underline" href="/dashboard">
+                /dashboard
+              </Link>
+              .
+            </div>
+          </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
