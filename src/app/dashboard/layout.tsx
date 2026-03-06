@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireSuperadmin } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
 
 const navItems = [
@@ -14,7 +14,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile } = await requireSuperadmin();
+  const { user } = await requireAuth();
+
+  const displayName =
+    user.user_metadata?.full_name ?? user.email ?? "Admin";
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
@@ -25,7 +28,7 @@ export default async function DashboardLayout({
             Admin Area
           </Link>
           <p className="mt-1 truncate text-xs text-slate-400">
-            {profile.first_name} {profile.last_name}
+            {displayName}
           </p>
         </div>
 

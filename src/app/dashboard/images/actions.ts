@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { requireSuperadmin } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 
 export async function createImage(formData: FormData) {
-  await requireSuperadmin();
+  await requireAuth();
   const admin = createSupabaseAdminClient();
 
   const url = formData.get("url") as string;
@@ -31,7 +31,7 @@ export async function createImage(formData: FormData) {
 }
 
 export async function updateImage(formData: FormData) {
-  await requireSuperadmin();
+  await requireAuth();
   const admin = createSupabaseAdminClient();
 
   const id = formData.get("id") as string;
@@ -61,7 +61,7 @@ export async function updateImage(formData: FormData) {
 }
 
 export async function deleteImage(formData: FormData) {
-  await requireSuperadmin();
+  await requireAuth();
   const admin = createSupabaseAdminClient();
 
   const id = formData.get("id") as string;
