@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signInWithGoogle } from "@/app/auth/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -58,14 +57,12 @@ export default async function Home() {
               </p>
             </div>
 
-            <form action={signInWithGoogle} className="mt-8">
-              <button
-                type="submit"
-                className="flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100"
-              >
-                Continue with Google
-              </button>
-            </form>
+            <Link
+              href="/auth/sign-in"
+              className="mt-8 flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100"
+            >
+              Continue with Google
+            </Link>
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-300">
               After sign-in, users are redirected to the protected dashboard at{" "}
