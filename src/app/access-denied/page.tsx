@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 
-export default function AccessDeniedPage() {
+export default async function AccessDeniedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const { reason } = await searchParams;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-16 text-white">
       <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl shadow-black/30 backdrop-blur">
@@ -13,6 +19,11 @@ export default function AccessDeniedPage() {
           Only users with <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">is_superadmin = true</code> can
           access the admin area. Contact the project owner if you need access.
         </p>
+        {reason && (
+          <p className="mt-3 break-all rounded-xl bg-white/5 px-4 py-2 text-xs font-mono text-slate-400">
+            Debug: {reason}
+          </p>
+        )}
         <div className="mt-8 flex justify-center gap-4">
           <Link
             href="/"
