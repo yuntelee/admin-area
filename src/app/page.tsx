@@ -1,20 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-function normalizeUrl(url: string) {
-  const trimmed = url.trim();
-
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed;
-  }
-
-  return `https://${trimmed}`;
-}
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default async function Home() {
-  const headerStore = await headers();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -23,33 +12,6 @@ export default async function Home() {
   if (user) {
     redirect("/dashboard");
   }
-
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const host =
-    headerStore.get("x-forwarded-host") ??
-    headerStore.get("host") ??
-    "localhost:3000";
-  const protocol =
-    headerStore.get("x-forwarded-proto") ??
-    (host.includes("localhost") ? "http" : "https");
-  const fallbackSiteUrl = `${protocol}://${host}`;
-  const siteUrl = configuredSiteUrl
-    ? normalizeUrl(configuredSiteUrl)
-    : fallbackSiteUrl;
-
-  const redirectTo = new URL("/auth/callback", siteUrl).toString();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    ? normalizeUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
-    : null;
-
-  const googleAuthUrl = supabaseUrl
-    ? `${supabaseUrl}/auth/v1/authorize?${new URLSearchParams({
-        provider: "google",
-        redirect_to: redirectTo,
-        access_type: "offline",
-        prompt: "consent",
-      }).toString()}`
-    : "/auth/error";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#1f2937_0%,_#0f172a_35%,_#020617_100%)] text-white">
@@ -96,12 +58,7 @@ export default async function Home() {
               </p>
             </div>
 
-            <a
-              href={googleAuthUrl}
-              className="mt-8 flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100"
-            >
-              Continue with Google
-            </a>
+            <GoogleSignInButton />
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-300">
               After sign-in, users are redirected to the protected dashboard at{" "}
