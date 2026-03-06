@@ -19,6 +19,7 @@ function getOrigin() {
 
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     if (loading) {
@@ -26,6 +27,7 @@ export function GoogleSignInButton() {
     }
 
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -45,24 +47,32 @@ export function GoogleSignInButton() {
 
       if (error || !data.url) {
         setLoading(false);
-        window.location.href = "/auth/error";
+        setErrorMessage("Unable to start Google sign-in. Please try again.");
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      window.location.href = "/auth/error";
+      setLoading(false);
+      setErrorMessage(
+        "Supabase environment variables are missing in this deployment. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel."
+      );
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleSignIn}
-      disabled={loading}
-      className="mt-8 flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-80"
-    >
-      {loading ? "Redirecting..." : "Continue with Google"}
-    </button>
+    <div className="mt-8 space-y-3">
+      <button
+        type="button"
+        onClick={handleSignIn}
+        disabled={loading}
+        className="flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-80"
+      >
+        {loading ? "Redirecting..." : "Continue with Google"}
+      </button>
+      {errorMessage ? (
+        <p className="text-sm text-rose-300">{errorMessage}</p>
+      ) : null}
+    </div>
   );
 }
