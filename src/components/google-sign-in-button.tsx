@@ -3,6 +3,20 @@
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+function getOrigin() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (!siteUrl) {
+    return window.location.origin;
+  }
+
+  if (siteUrl.startsWith("http://") || siteUrl.startsWith("https://")) {
+    return siteUrl;
+  }
+
+  return `https://${siteUrl}`;
+}
+
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
 
@@ -13,29 +27,32 @@ export function GoogleSignInButton() {
 
     setLoading(true);
 
-    const supabase = createSupabaseBrowserClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    const origin = siteUrl || window.location.origin;
-    const redirectTo = new URL("/auth/callback", origin).toString();
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const origin = getOrigin();
+      const redirectTo = new URL("/auth/callback", origin).toString();
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
-      },
-    });
+      });
 
-    if (error || !data.url) {
-      setLoading(false);
+      if (error || !data.url) {
+        setLoading(false);
+        window.location.href = "/auth/error";
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
       window.location.href = "/auth/error";
-      return;
     }
-
-    window.location.href = data.url;
   };
 
   return (
