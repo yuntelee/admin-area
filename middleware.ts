@@ -35,16 +35,39 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // All /dashboard routes require authentication
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/admin");
+
+  if (!isProtectedRoute) {
+    return response;
+  }
+
+  // All protected admin routes require authentication.
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // Superadmin gate for admin area.
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("is_superadmin")
+      .eq("id", user.id)
+      .maybeSingle<{ is_superadmin?: boolean | null }>();
+
+    if (error || !profile?.is_superadmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/access-denied";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Checks that the current user is authenticated.
@@ -16,6 +17,27 @@ export async function requireAuth() {
 
   if (!user) {
     redirect("/");
+  }
+
+  return { user };
+}
+
+/**
+ * Checks that the current user is both authenticated and superadmin.
+ * Redirects to /access-denied when the account lacks admin privileges.
+ */
+export async function requireSuperadmin() {
+  const { user } = await requireAuth();
+  const admin = createSupabaseAdminClient();
+
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("is_superadmin")
+    .eq("id", user.id)
+    .maybeSingle<{ is_superadmin?: boolean | null }>();
+
+  if (error || !profile?.is_superadmin) {
+    redirect("/access-denied");
   }
 
   return { user };

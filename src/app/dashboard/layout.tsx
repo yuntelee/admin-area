@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAuth } from "@/lib/auth";
+import { requireSuperadmin } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
 
 const navItems = [
@@ -14,7 +14,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireAuth();
+  const { user } = await requireSuperadmin();
 
   const displayName =
     user.user_metadata?.full_name ?? user.email ?? "Admin";
