@@ -18,15 +18,16 @@ export async function requireApiSuperadmin() {
   const admin = createSupabaseAdminClient();
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("is_superadmin")
+    .select("is_superadmin, is_matrix_admin")
     .eq("id", user.id)
-    .maybeSingle<{ is_superadmin?: boolean | null }>();
+    .maybeSingle<{ is_superadmin?: boolean | null; is_matrix_admin?: boolean | null }>();
 
-  if (error || !profile?.is_superadmin) {
+  const hasAdminAccess = Boolean(profile?.is_superadmin || profile?.is_matrix_admin);
+  if (error || !hasAdminAccess) {
     return {
       ok: false as const,
       status: 403,
-      error: { code: "FORBIDDEN", message: "Superadmin access required." },
+      error: { code: "FORBIDDEN", message: "Admin access required." },
     };
   }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { signOut } from "@/app/auth/actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { requireSuperadmin } from "@/lib/auth";
 import { getResourceSections } from "@/lib/admin/resources";
 
@@ -18,6 +19,9 @@ export default async function AdminLayout({
             Admin Area
           </Link>
           <p className="mt-1 truncate text-xs text-slate-400">{user.email}</p>
+          <div className="mt-3">
+            <ThemeToggle />
+          </div>
         </div>
 
         <nav className="space-y-5">

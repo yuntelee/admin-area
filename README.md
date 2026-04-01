@@ -17,6 +17,7 @@ Copy [.env.example](.env.example) to `.env.local` and fill in:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL`
+- `ALMOSTCRACKD_API_URL` (optional, defaults to `https://api.almostcrackd.ai`)
 
 Local example:
 
@@ -55,5 +56,6 @@ Open `http://localhost:3000` and sign in with Google. Authenticated users are re
 
 - Landing page: [/](src/app/page.tsx)
 - Protected page: [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
+- Prompt chain tool: [src/app/dashboard/humor-flavors/page.tsx](src/app/dashboard/humor-flavors/page.tsx)
 - OAuth callback: [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts)
 - Session middleware: [middleware.ts](middleware.ts)

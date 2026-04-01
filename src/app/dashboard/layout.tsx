@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireSuperadmin } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "📊" },
   { href: "/dashboard/profiles", label: "Profiles", icon: "👤" },
   { href: "/dashboard/images", label: "Images", icon: "🖼️" },
   { href: "/dashboard/captions", label: "Captions", icon: "💬" },
+  { href: "/dashboard/humor-flavors", label: "Prompt Chain", icon: "🧠" },
 ];
 
 export default async function DashboardLayout({
@@ -30,6 +32,9 @@ export default async function DashboardLayout({
           <p className="mt-1 truncate text-xs text-slate-400">
             {displayName}
           </p>
+          <div className="mt-3">
+            <ThemeToggle />
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">

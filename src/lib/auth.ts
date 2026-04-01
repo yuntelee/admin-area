@@ -23,7 +23,7 @@ export async function requireAuth() {
 }
 
 /**
- * Checks that the current user is both authenticated and superadmin.
+ * Checks that the current user is both authenticated and has admin privileges.
  * Redirects to /access-denied when the account lacks admin privileges.
  */
 export async function requireSuperadmin() {
@@ -32,11 +32,12 @@ export async function requireSuperadmin() {
 
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("is_superadmin")
+    .select("is_superadmin, is_matrix_admin")
     .eq("id", user.id)
-    .maybeSingle<{ is_superadmin?: boolean | null }>();
+    .maybeSingle<{ is_superadmin?: boolean | null; is_matrix_admin?: boolean | null }>();
 
-  if (error || !profile?.is_superadmin) {
+  const hasAdminAccess = Boolean(profile?.is_superadmin || profile?.is_matrix_admin);
+  if (error || !hasAdminAccess) {
     redirect("/access-denied");
   }
 

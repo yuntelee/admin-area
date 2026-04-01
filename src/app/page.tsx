@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
@@ -17,6 +18,9 @@ export default async function Home() {
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#1f2937_0%,_#0f172a_35%,_#020617_100%)] text-white">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:56px_56px] opacity-20" />
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16 lg:px-8">
+        <div className="mb-8 flex justify-end">
+          <ThemeToggle />
+        </div>
         <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.9fr]">
           <section className="space-y-8">
             <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-1 text-sm text-white/80 backdrop-blur">
