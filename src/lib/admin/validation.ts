@@ -107,10 +107,17 @@ export function validatePayload(resourceKey: string, payload: Record<string, unk
   }
 
   if (resourceKey === "whitelisted-email-addresses") {
-    const email = String(payload.email ?? "").trim().toLowerCase();
+    const email = String(payload.email_address ?? payload.email ?? "").trim().toLowerCase();
     if (!email || !validateEmail(email)) {
-      throw new Error("Payload.email must be a valid email address.");
+      throw new Error("Payload.email_address must be a valid email address.");
     }
-    payload.email = email;
+    payload.email_address = email;
+    delete payload.email;
+    delete payload.is_active;
+    delete payload.id;
+    delete payload.created_datetime_utc;
+    delete payload.modified_datetime_utc;
+    delete payload.created_by_user_id;
+    delete payload.modified_by_user_id;
   }
 }

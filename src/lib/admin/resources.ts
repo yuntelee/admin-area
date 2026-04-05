@@ -180,16 +180,15 @@ export const ADMIN_RESOURCES: AdminResource[] = [
   },
   {
     key: "whitelisted-email-addresses",
-    label: "Whitelisted Email Addresses",
-    table: "whitelisted_email_addresses",
+    label: "Whitelist Email Addresses",
+    table: "whitelist_email_addresses",
     mode: "crud",
     section: "Access",
-    description: "Create/read/update/delete whitelisted emails.",
-    searchColumns: ["email"],
+    description: "Create/read/update/delete whitelist email addresses.",
+    searchColumns: ["email_address"],
     orderBy: "id",
     samplePayload: {
-      email: "user@example.com",
-      is_active: true,
+      email_address: "user@example.com",
     },
   },
 ];
