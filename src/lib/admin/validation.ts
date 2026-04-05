@@ -47,6 +47,11 @@ export function validatePayload(resourceKey: string, payload: Record<string, unk
     payload.term = term;
     payload.definition = definition;
     payload.example = example;
+    delete payload.id;
+    delete payload.created_datetime_utc;
+    delete payload.modified_datetime_utc;
+    delete payload.created_by_user_id;
+    delete payload.modified_by_user_id;
     delete payload.category;
   }
 
