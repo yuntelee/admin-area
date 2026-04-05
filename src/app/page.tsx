@@ -66,7 +66,7 @@ export default async function Home() {
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-300">
               After sign-in, users are redirected to the protected dashboard at{" "}
-              <Link className="font-semibold text-white underline" href="/dashboard">
+              <Link className="font-semibold text-white underline" href="/admin">
                 /admin
               </Link>
               .

@@ -54,11 +54,11 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("is_superadmin, is_matrix_admin")
+      .select("is_superadmin")
       .eq("id", user.id)
-      .maybeSingle<{ is_superadmin?: boolean | null; is_matrix_admin?: boolean | null }>();
+      .maybeSingle<{ is_superadmin?: boolean | null }>();
 
-    const hasAdminAccess = Boolean(profile?.is_superadmin || profile?.is_matrix_admin);
+    const hasAdminAccess = Boolean(profile?.is_superadmin);
     if (error || !hasAdminAccess) {
       const url = request.nextUrl.clone();
       url.pathname = "/access-denied";

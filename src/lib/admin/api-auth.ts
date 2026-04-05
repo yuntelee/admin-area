@@ -18,11 +18,11 @@ export async function requireApiSuperadmin() {
   const admin = createSupabaseAdminClient();
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("is_superadmin, is_matrix_admin")
+    .select("is_superadmin")
     .eq("id", user.id)
-    .maybeSingle<{ is_superadmin?: boolean | null; is_matrix_admin?: boolean | null }>();
+    .maybeSingle<{ is_superadmin?: boolean | null }>();
 
-  const hasAdminAccess = Boolean(profile?.is_superadmin || profile?.is_matrix_admin);
+  const hasAdminAccess = Boolean(profile?.is_superadmin);
   if (error || !hasAdminAccess) {
     return {
       ok: false as const,
