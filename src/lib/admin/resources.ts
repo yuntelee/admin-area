@@ -41,7 +41,7 @@ export const ADMIN_RESOURCES: AdminResource[] = [
     mode: "read",
     section: "Humor",
     description: "Read-only humor flavors.",
-    searchColumns: ["name", "slug", "description"],
+    searchColumns: ["slug", "description"],
     orderBy: "id",
   },
   {
@@ -51,7 +51,7 @@ export const ADMIN_RESOURCES: AdminResource[] = [
     mode: "read",
     section: "Humor",
     description: "Read-only humor flavor steps.",
-    searchColumns: ["step_name", "description"],
+    searchColumns: ["description", "llm_user_prompt", "llm_system_prompt"],
     orderBy: "id",
   },
   {
@@ -76,12 +76,14 @@ export const ADMIN_RESOURCES: AdminResource[] = [
     mode: "crud",
     section: "Content",
     description: "Create/read/update/delete terms.",
-    searchColumns: ["term", "definition", "category"],
+    searchColumns: ["term", "definition", "example"],
     orderBy: "id",
     samplePayload: {
       term: "setup",
       definition: "A phrase or concept used in generated humor.",
-      category: "general",
+      example: "When production works on Friday night.",
+      priority: 0,
+      term_type_id: null,
     },
   },
   {

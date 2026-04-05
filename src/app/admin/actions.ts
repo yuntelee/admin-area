@@ -38,7 +38,50 @@ function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function normalizeSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
+
 function validateResourcePayload(resourceKey: string, payload: Record<string, unknown>) {
+  if (resourceKey === "humor-flavors") {
+    const title = typeof payload.title === "string" ? payload.title : "";
+    const name = typeof payload.name === "string" ? payload.name : "";
+    const slug = typeof payload.slug === "string" ? payload.slug : "";
+
+    const normalizedSlug = normalizeSlug(slug || name || title);
+    if (!normalizedSlug) {
+      throw new Error("Payload.slug is required for humor flavors.");
+    }
+
+    payload.slug = normalizedSlug;
+    if (typeof payload.is_pinned !== "boolean") {
+      payload.is_pinned = false;
+    }
+
+    delete payload.title;
+    delete payload.name;
+  }
+
+  if (resourceKey === "terms") {
+    const term = String(payload.term ?? "").trim();
+    const definition = String(payload.definition ?? "").trim();
+    const example = String(payload.example ?? "").trim();
+
+    if (!term || !definition || !example) {
+      throw new Error("Payload.term, payload.definition, and payload.example are required for terms.");
+    }
+
+    payload.term = term;
+    payload.definition = definition;
+    payload.example = example;
+    delete payload.category;
+  }
+
   if (resourceKey === "allowed-signup-domains") {
     const domain = String(payload.domain ?? "").trim().toLowerCase();
     if (!domain || !validateDomain(domain)) {
@@ -160,7 +203,7 @@ export async function createOrUpdateImageRecord(formData: FormData) {
   const returnPath = String(formData.get("returnPath") ?? "/admin/images");
 
   try {
-    const { accessToken } = await requireSuperadminWithAccessToken();
+    const { user, accessToken } = await requireSuperadminWithAccessToken();
     const mode = String(formData.get("mode") ?? "create");
     const rowId = String(formData.get("rowId") ?? "");
 
@@ -176,6 +219,14 @@ export async function createOrUpdateImageRecord(formData: FormData) {
       is_public: isPublic,
       is_common_use: isCommonUse,
     };
+
+    if (mode === "update") {
+      payload.modified_by_user_id = user.id;
+    } else {
+      payload.profile_id = user.id;
+      payload.created_by_user_id = user.id;
+      payload.modified_by_user_id = user.id;
+    }
 
     if (url) {
       payload.url = url;
@@ -193,8 +244,6 @@ export async function createOrUpdateImageRecord(formData: FormData) {
       });
 
       payload.url = uploaded.cdnUrl;
-      payload.mime_type = uploaded.contentType;
-      payload.file_size_bytes = file.size;
       pipelineImageId = uploaded.imageId;
     }
 

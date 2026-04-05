@@ -6,7 +6,7 @@ import { requireAuth, requireAuthWithAccessToken } from "@/lib/auth";
 import { uploadAndRegisterImageWithPipeline } from "@/lib/pipeline/client";
 
 export async function createImage(formData: FormData) {
-  const { accessToken } = await requireAuthWithAccessToken();
+  const { user, accessToken } = await requireAuthWithAccessToken();
   const admin = createSupabaseAdminClient();
 
   const url = formData.get("url") as string;
@@ -23,6 +23,9 @@ export async function createImage(formData: FormData) {
     additional_context: additional_context || null,
     is_public,
     is_common_use,
+    profile_id: user.id,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id,
   };
 
   const trimmedUrl = String(url || "").trim();
@@ -39,8 +42,6 @@ export async function createImage(formData: FormData) {
     });
 
     payload.url = uploaded.cdnUrl;
-    payload.mime_type = uploaded.contentType;
-    payload.file_size_bytes = file.size;
     pipelineImageId = uploaded.imageId;
   }
 
@@ -85,7 +86,7 @@ export async function createImage(formData: FormData) {
 }
 
 export async function updateImage(formData: FormData) {
-  const { accessToken } = await requireAuthWithAccessToken();
+  const { user, accessToken } = await requireAuthWithAccessToken();
   const admin = createSupabaseAdminClient();
 
   const id = formData.get("id") as string;
@@ -103,6 +104,7 @@ export async function updateImage(formData: FormData) {
     additional_context: additional_context || null,
     is_public,
     is_common_use,
+    modified_by_user_id: user.id,
   };
 
   const trimmedUrl = String(url || "").trim();
@@ -118,8 +120,6 @@ export async function updateImage(formData: FormData) {
     });
 
     payload.url = uploaded.cdnUrl;
-    payload.mime_type = uploaded.contentType;
-    payload.file_size_bytes = file.size;
   }
 
   const { error } = await admin

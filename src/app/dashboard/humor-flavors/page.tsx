@@ -12,15 +12,15 @@ import {
 import PromptChainTester from "./prompt-chain-tester";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const STEP_ORDER_CANDIDATES = ["step_order", "step_number", "order_index", "sequence", "position"];
-const STEP_NAME_CANDIDATES = ["step_name", "name"];
-const STEP_PROMPT_CANDIDATES = ["prompt_template", "prompt_text", "prompt", "instruction"];
+const STEP_ORDER_CANDIDATES = ["order_by", "step_order", "step_number", "order_index", "sequence", "position"];
+const STEP_NAME_CANDIDATES = ["description"];
+const STEP_PROMPT_CANDIDATES = ["llm_user_prompt", "llm_system_prompt", "prompt_template", "prompt_text", "prompt", "instruction"];
 
 type Flavor = {
   id: string;
-  name: string;
   slug: string | null;
   description: string | null;
+  is_pinned: boolean;
 };
 
 type StepRecord = Record<string, unknown>;
@@ -95,7 +95,7 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
 
   const { data: flavorsData, error: flavorsError } = await admin
     .from("humor_flavors")
-    .select("id, name, slug, description")
+    .select("id, slug, description, is_pinned")
     .order("id", { ascending: true })
     .limit(200);
 
@@ -180,7 +180,7 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                       : "border-white/10 text-slate-300 hover:bg-white/10"
                   }`}
                 >
-                  <p className="font-medium">{flavor.name}</p>
+                  <p className="font-medium">{flavor.slug || `flavor-${flavor.id}`}</p>
                   <p className="text-xs text-slate-400">{flavor.slug || "no-slug"}</p>
                 </Link>
               );
@@ -194,14 +194,9 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
             <form action={createHumorFlavor} className="mt-2 space-y-2">
               <input type="hidden" name="returnPath" value={currentPath} />
               <input
-                name="name"
-                required
-                placeholder="Flavor name"
-                className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-              />
-              <input
                 name="slug"
-                placeholder="optional-slug"
+                required
+                placeholder="flavor-slug"
                 className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
               />
               <textarea
@@ -210,6 +205,10 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                 placeholder="Optional description"
                 className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
               />
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" name="is_pinned" className="rounded" />
+                Pin flavor
+              </label>
               <button
                 type="submit"
                 className="rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-black hover:bg-emerald-400"
@@ -230,22 +229,23 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                   <input type="hidden" name="returnPath" value={currentPath} />
 
                   <label className="space-y-1 text-xs text-slate-300">
-                    Name
-                    <input
-                      name="name"
-                      required
-                      defaultValue={selectedFlavor.name}
-                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-                    />
-                  </label>
-
-                  <label className="space-y-1 text-xs text-slate-300">
                     Slug
                     <input
+                      required
                       name="slug"
                       defaultValue={selectedFlavor.slug ?? ""}
                       className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
                     />
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-slate-300 lg:col-span-2">
+                    <input
+                      type="checkbox"
+                      name="is_pinned"
+                      defaultChecked={selectedFlavor.is_pinned}
+                      className="rounded"
+                    />
+                    Pin flavor
                   </label>
 
                   <label className="space-y-1 text-xs text-slate-300 lg:col-span-2">
@@ -297,11 +297,24 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                   <input type="hidden" name="returnPath" value={currentPath} />
 
                   <label className="space-y-1 text-xs text-slate-300">
-                    Step Name
+                    Step Description
                     <input
                       name="stepName"
                       required
-                      placeholder="Describe image"
+                      placeholder="Describe what this step does"
+                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+
+                  <label className="space-y-1 text-xs text-slate-300">
+                    Temperature
+                    <input
+                      name="llmTemperature"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      placeholder="optional"
                       className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
                     />
                   </label>
@@ -387,6 +400,17 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                             className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
                           />
 
+                          <input
+                            name="llmTemperature"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="2"
+                            defaultValue={typeof step.llm_temperature === "number" ? String(step.llm_temperature) : ""}
+                            placeholder="Temperature"
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          />
+
                           <textarea
                             name="description"
                             rows={2}
@@ -434,7 +458,7 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
               </section>
 
               <PromptChainTester
-                flavors={flavors.map((flavor) => ({ id: String(flavor.id), name: flavor.name, slug: flavor.slug }))}
+                flavors={flavors.map((flavor) => ({ id: String(flavor.id), name: flavor.slug || `flavor-${flavor.id}`, slug: flavor.slug }))}
                 selectedFlavorId={selectedFlavorId}
               />
 
