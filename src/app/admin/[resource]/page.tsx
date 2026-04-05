@@ -115,6 +115,7 @@ function toFieldValue(value: unknown, type: CreateFieldType) {
 function buildCreateFields(samplePayload: Record<string, unknown> | undefined, firstRow: Record<string, unknown> | undefined) {
   const fields: CreateField[] = [];
   const seen = new Set<string>();
+  const firstRowKeys = firstRow ? new Set(Object.keys(firstRow)) : null;
 
   const addField = (name: string, value: unknown) => {
     if (!name || seen.has(name) || isSystemColumn(name)) {
@@ -134,6 +135,9 @@ function buildCreateFields(samplePayload: Record<string, unknown> | undefined, f
 
   if (samplePayload) {
     for (const [name, value] of Object.entries(samplePayload)) {
+      if (firstRowKeys && !firstRowKeys.has(name)) {
+        continue;
+      }
       addField(name, value);
     }
   }

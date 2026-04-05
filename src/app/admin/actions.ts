@@ -155,6 +155,63 @@ async function validateTermsForeignKeys(
   }
 }
 
+async function detectExistingColumn(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  table: string,
+  candidates: string[],
+) {
+  for (const column of candidates) {
+    const { error } = await admin.from(table).select(column).limit(1);
+    if (!error) {
+      return column;
+    }
+  }
+
+  return null;
+}
+
+async function normalizeCaptionExamplesPayload(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  payload: Record<string, unknown>,
+) {
+  const textAliases = ["example_text", "content", "example", "caption", "text", "description"];
+  const notesAliases = ["notes", "note", "context", "additional_context", "description"];
+
+  const rawText = textAliases
+    .map((key) => payload[key])
+    .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+
+  if (!rawText) {
+    throw new Error("Caption example text is required.");
+  }
+
+  const textColumn = await detectExistingColumn(admin, "caption_examples", textAliases);
+  if (!textColumn) {
+    throw new Error("Unable to detect text column for caption_examples.");
+  }
+
+  payload[textColumn] = rawText.trim();
+
+  const rawNotes = notesAliases
+    .map((key) => payload[key])
+    .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+  const notesColumn = await detectExistingColumn(admin, "caption_examples", notesAliases);
+  if (rawNotes && notesColumn) {
+    payload[notesColumn] = rawNotes.trim();
+  }
+
+  for (const alias of new Set([...textAliases, ...notesAliases])) {
+    if (alias !== textColumn && alias !== notesColumn) {
+      delete payload[alias];
+    }
+  }
+
+  const hasIsActiveColumn = (await detectExistingColumn(admin, "caption_examples", ["is_active"])) === "is_active";
+  if (!hasIsActiveColumn) {
+    delete payload.is_active;
+  }
+}
+
 function validateResourcePayload(resourceKey: string, payload: Record<string, unknown>) {
   if (resourceKey === "humor-flavors") {
     const title = typeof payload.title === "string" ? payload.title : "";
@@ -241,6 +298,9 @@ export async function createGenericRecord(formData: FormData) {
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
     }
+    if (resourceKey === "caption-examples") {
+      await normalizeCaptionExamplesPayload(admin, payload);
+    }
     const { error } = await admin.from(resource.table).insert(payload);
 
     if (error) {
@@ -284,6 +344,9 @@ export async function updateGenericRecord(formData: FormData) {
     const admin = createSupabaseAdminClient();
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
+    }
+    if (resourceKey === "caption-examples") {
+      await normalizeCaptionExamplesPayload(admin, payload);
     }
     const { error } = await admin.from(resource.table).update(payload).eq("id", rowId);
 

@@ -113,13 +113,7 @@ export const ADMIN_RESOURCES: AdminResource[] = [
     mode: "crud",
     section: "Content",
     description: "Create/read/update/delete caption examples.",
-    searchColumns: ["example_text", "notes"],
     orderBy: "id",
-    samplePayload: {
-      example_text: "When the deploy works on Friday.",
-      notes: "Internal reference example",
-      is_active: true,
-    },
   },
   {
     key: "llm-models",
