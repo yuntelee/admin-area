@@ -120,6 +120,11 @@ export async function POST(request: Request, context: Context) {
     return jsonError(422, "VALIDATION_ERROR", message);
   }
 
+  if (resource.key === "terms") {
+    payload.created_by_user_id = auth.userId;
+    payload.modified_by_user_id = auth.userId;
+  }
+
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.from(resource.table).insert(payload).select("*").limit(1).single();
 

@@ -159,7 +159,7 @@ export async function createGenericRecord(formData: FormData) {
   const returnPath = String(formData.get("returnPath") ?? "/admin");
 
   try {
-    await requireSuperadmin();
+    const { user } = await requireSuperadmin();
     const resourceKey = String(formData.get("resourceKey") ?? "");
     const resource = getResourceByKey(resourceKey);
 
@@ -173,6 +173,11 @@ export async function createGenericRecord(formData: FormData) {
         ? parsePayload(rawPayload)
         : parsePayloadFromStructuredFields(formData);
     validateResourcePayload(resourceKey, payload);
+
+    if (resourceKey === "terms") {
+      payload.created_by_user_id = user.id;
+      payload.modified_by_user_id = user.id;
+    }
 
     const admin = createSupabaseAdminClient();
     const { error } = await admin.from(resource.table).insert(payload);
@@ -194,7 +199,7 @@ export async function updateGenericRecord(formData: FormData) {
   const returnPath = String(formData.get("returnPath") ?? "/admin");
 
   try {
-    await requireSuperadmin();
+    const { user } = await requireSuperadmin();
     const resourceKey = String(formData.get("resourceKey") ?? "");
     const rowId = String(formData.get("rowId") ?? "");
     const resource = getResourceByKey(resourceKey);
@@ -209,6 +214,10 @@ export async function updateGenericRecord(formData: FormData) {
 
     const payload = parsePayload(formData.get("payload"));
     validateResourcePayload(resourceKey, payload);
+
+    if (resourceKey === "terms") {
+      payload.modified_by_user_id = user.id;
+    }
 
     const admin = createSupabaseAdminClient();
     const { error } = await admin.from(resource.table).update(payload).eq("id", rowId);
