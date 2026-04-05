@@ -128,12 +128,13 @@ export const ADMIN_RESOURCES: AdminResource[] = [
     mode: "crud",
     section: "AI",
     description: "Create/read/update/delete LLM models.",
-    searchColumns: ["name", "model_name", "display_name"],
+    searchColumns: ["name", "provider_model_id"],
     orderBy: "id",
     samplePayload: {
       name: "gpt-4.1",
-      provider_id: "<provider-id>",
-      is_active: true,
+      llm_provider_id: 1,
+      provider_model_id: "gpt-4.1",
+      is_temperature_supported: true,
     },
   },
   {

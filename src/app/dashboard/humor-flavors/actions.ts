@@ -272,6 +272,10 @@ export async function updateHumorFlavorStep(formData: FormData) {
     const description = toNullableText(formData.get("description"));
     const promptText = toNullableText(formData.get("promptText"));
     const llmTemperature = toNumber(formData.get("llmTemperature"));
+    const llmInputTypeId = toInt(formData.get("llmInputTypeId"));
+    const llmOutputTypeId = toInt(formData.get("llmOutputTypeId"));
+    const llmModelId = toInt(formData.get("llmModelId"));
+    const humorFlavorStepTypeId = toInt(formData.get("humorFlavorStepTypeId"));
 
     if (!stepId) {
       throw new Error("Missing step id.");
@@ -290,6 +294,19 @@ export async function updateHumorFlavorStep(formData: FormData) {
 
     if (llmTemperature !== null) {
       payload.llm_temperature = llmTemperature;
+    }
+
+    if (llmInputTypeId !== null) {
+      payload.llm_input_type_id = llmInputTypeId;
+    }
+    if (llmOutputTypeId !== null) {
+      payload.llm_output_type_id = llmOutputTypeId;
+    }
+    if (llmModelId !== null) {
+      payload.llm_model_id = llmModelId;
+    }
+    if (humorFlavorStepTypeId !== null) {
+      payload.humor_flavor_step_type_id = humorFlavorStepTypeId;
     }
 
     const { error } = await admin.from("humor_flavor_steps").update(payload).eq("id", stepId);

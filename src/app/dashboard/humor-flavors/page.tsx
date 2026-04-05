@@ -25,6 +25,11 @@ type Flavor = {
 
 type StepRecord = Record<string, unknown>;
 
+type Option = {
+  id: number;
+  label: string;
+};
+
 type PageProps = {
   searchParams?: Promise<{
     flavor?: string;
@@ -51,6 +56,20 @@ function getOrderValue(step: StepRecord, fallback: number) {
     }
   }
   return fallback;
+}
+
+function getIntValue(step: StepRecord, key: string) {
+  const raw = step[key];
+  if (typeof raw === "number" && Number.isInteger(raw)) {
+    return raw;
+  }
+  if (typeof raw === "string") {
+    const parsed = Number(raw);
+    if (Number.isInteger(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
 }
 
 async function loadSteps(
@@ -92,6 +111,30 @@ async function loadSteps(
 export default async function HumorFlavorsPage({ searchParams }: PageProps) {
   const resolved = await searchParams;
   const admin = createSupabaseAdminClient();
+
+  const [inputTypeRes, outputTypeRes, modelRes, stepTypeRes] = await Promise.all([
+    admin.from("llm_input_types").select("id, slug, description").order("id", { ascending: true }),
+    admin.from("llm_output_types").select("id, slug, description").order("id", { ascending: true }),
+    admin.from("llm_models").select("id, name, provider_model_id").order("id", { ascending: true }),
+    admin.from("humor_flavor_step_types").select("id, slug, description").order("id", { ascending: true }),
+  ]);
+
+  const inputTypeOptions: Option[] = (inputTypeRes.data ?? []).map((row) => ({
+    id: Number(row.id),
+    label: `${row.slug ?? "input"} - ${row.description ?? ""}`,
+  }));
+  const outputTypeOptions: Option[] = (outputTypeRes.data ?? []).map((row) => ({
+    id: Number(row.id),
+    label: `${row.slug ?? "output"} - ${row.description ?? ""}`,
+  }));
+  const modelOptions: Option[] = (modelRes.data ?? []).map((row) => ({
+    id: Number(row.id),
+    label: `${row.name ?? "model"} (${row.provider_model_id ?? "n/a"})`,
+  }));
+  const stepTypeOptions: Option[] = (stepTypeRes.data ?? []).map((row) => ({
+    id: Number(row.id),
+    label: `${row.slug ?? "step-type"} - ${row.description ?? ""}`,
+  }));
 
   const { data: flavorsData, error: flavorsError } = await admin
     .from("humor_flavors")
@@ -319,6 +362,70 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                     />
                   </label>
 
+                  <label className="space-y-1 text-xs text-slate-300">
+                    LLM Input Type
+                    <select
+                      name="llmInputTypeId"
+                      required
+                      defaultValue={inputTypeOptions[0] ? String(inputTypeOptions[0].id) : ""}
+                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                    >
+                      {inputTypeOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-xs text-slate-300">
+                    LLM Output Type
+                    <select
+                      name="llmOutputTypeId"
+                      required
+                      defaultValue={outputTypeOptions[0] ? String(outputTypeOptions[0].id) : ""}
+                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                    >
+                      {outputTypeOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-xs text-slate-300">
+                    LLM Model
+                    <select
+                      name="llmModelId"
+                      required
+                      defaultValue={modelOptions[0] ? String(modelOptions[0].id) : ""}
+                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                    >
+                      {modelOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-xs text-slate-300">
+                    Step Type
+                    <select
+                      name="humorFlavorStepTypeId"
+                      required
+                      defaultValue={stepTypeOptions[0] ? String(stepTypeOptions[0].id) : ""}
+                      className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                    >
+                      {stepTypeOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
                   <label className="space-y-1 text-xs text-slate-300 lg:col-span-2">
                     Prompt / Instruction
                     <textarea
@@ -348,6 +455,16 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                     </button>
                   </div>
                 </form>
+
+                {(inputTypeOptions.length === 0 ||
+                  outputTypeOptions.length === 0 ||
+                  modelOptions.length === 0 ||
+                  stepTypeOptions.length === 0) && (
+                  <p className="mt-3 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+                    Missing required reference data for step creation. Ensure llm_input_types, llm_output_types,
+                    llm_models, and humor_flavor_step_types each have at least one row.
+                  </p>
+                )}
 
                 <div className="mt-4 space-y-3">
                   {steps.map((step, index) => {
@@ -410,6 +527,66 @@ export default async function HumorFlavorsPage({ searchParams }: PageProps) {
                             placeholder="Temperature"
                             className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
                           />
+
+                          <select
+                            name="llmInputTypeId"
+                            defaultValue={(() => {
+                              const value = getIntValue(step, "llm_input_type_id");
+                              return value !== null ? String(value) : inputTypeOptions[0] ? String(inputTypeOptions[0].id) : "";
+                            })()}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          >
+                            {inputTypeOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            name="llmOutputTypeId"
+                            defaultValue={(() => {
+                              const value = getIntValue(step, "llm_output_type_id");
+                              return value !== null ? String(value) : outputTypeOptions[0] ? String(outputTypeOptions[0].id) : "";
+                            })()}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          >
+                            {outputTypeOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            name="llmModelId"
+                            defaultValue={(() => {
+                              const value = getIntValue(step, "llm_model_id");
+                              return value !== null ? String(value) : modelOptions[0] ? String(modelOptions[0].id) : "";
+                            })()}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          >
+                            {modelOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            name="humorFlavorStepTypeId"
+                            defaultValue={(() => {
+                              const value = getIntValue(step, "humor_flavor_step_type_id");
+                              return value !== null ? String(value) : stepTypeOptions[0] ? String(stepTypeOptions[0].id) : "";
+                            })()}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          >
+                            {stepTypeOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
 
                           <textarea
                             name="description"
