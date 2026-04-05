@@ -30,6 +30,11 @@ type CreateField = {
   defaultValue: string;
 };
 
+type TermTypeOption = {
+  id: number;
+  label: string;
+};
+
 const PAGE_SIZE = 25;
 
 function encodeSearchTerm(value: string) {
@@ -195,6 +200,20 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
   const firstRow = rows[0];
   const columns = getColumnKeys(rows);
   const createFields = buildCreateFields(resource.samplePayload, firstRow);
+
+  let termTypeOptions: TermTypeOption[] = [];
+  if (resource.key === "terms") {
+    const { data: termTypes } = await admin
+      .from("term_types")
+      .select("id, description")
+      .order("id", { ascending: true });
+
+    termTypeOptions = (termTypes ?? []).map((row) => ({
+      id: Number(row.id),
+      label: `${row.id} - ${String(row.description ?? "")}`,
+    }));
+  }
+
   const totalCount = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -260,34 +279,55 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
                 {createFields.map((field) => (
                   <label key={field.name} className="space-y-1 text-xs text-slate-300">
                     {field.name}
-                    <input type="hidden" name={`field_type__${field.name}`} value={field.type} />
 
-                    {field.type === "json" ? (
-                      <textarea
-                        name={`field__${field.name}`}
-                        rows={3}
-                        defaultValue={field.defaultValue}
-                        placeholder={field.example || "{}"}
-                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 font-mono text-xs text-white"
-                      />
-                    ) : field.type === "boolean" ? (
-                      <select
-                        name={`field__${field.name}`}
-                        defaultValue={field.defaultValue || ""}
-                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-                      >
-                        <option value="">(leave empty)</option>
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                      </select>
+                    {resource.key === "terms" && field.name === "term_type_id" ? (
+                      <>
+                        <input type="hidden" name={`field_type__${field.name}`} value="number" />
+                        <select
+                          name={`field__${field.name}`}
+                          defaultValue={field.defaultValue || ""}
+                          className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                        >
+                          <option value="">(none)</option>
+                          {termTypeOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </>
                     ) : (
-                      <input
-                        type={field.type === "number" ? "number" : "text"}
-                        name={`field__${field.name}`}
-                        defaultValue={field.defaultValue}
-                        placeholder={field.example}
-                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-                      />
+                      <>
+                        <input type="hidden" name={`field_type__${field.name}`} value={field.type} />
+
+                        {field.type === "json" ? (
+                          <textarea
+                            name={`field__${field.name}`}
+                            rows={3}
+                            defaultValue={field.defaultValue}
+                            placeholder={field.example || "{}"}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 font-mono text-xs text-white"
+                          />
+                        ) : field.type === "boolean" ? (
+                          <select
+                            name={`field__${field.name}`}
+                            defaultValue={field.defaultValue || ""}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          >
+                            <option value="">(leave empty)</option>
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                          </select>
+                        ) : (
+                          <input
+                            type={field.type === "number" ? "number" : "text"}
+                            name={`field__${field.name}`}
+                            defaultValue={field.defaultValue}
+                            placeholder={field.example}
+                            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                          />
+                        )}
+                      </>
                     )}
                   </label>
                 ))}

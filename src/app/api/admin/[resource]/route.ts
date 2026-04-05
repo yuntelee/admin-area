@@ -20,6 +20,25 @@ function safeSearch(value: string) {
   return value.replaceAll(",", " ");
 }
 
+function toOptionalInt(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isInteger(parsed)) {
+      return parsed;
+    }
+  }
+
+  throw new Error("term_type_id must be an integer or null.");
+}
+
 export async function GET(request: Request, context: Context) {
   const auth = await requireApiSuperadmin();
   if (!auth.ok) {
@@ -121,6 +140,30 @@ export async function POST(request: Request, context: Context) {
   }
 
   if (resource.key === "terms") {
+    try {
+      payload.term_type_id = toOptionalInt(payload.term_type_id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid term_type_id";
+      return jsonError(422, "VALIDATION_ERROR", message);
+    }
+
+    if (payload.term_type_id !== null) {
+      const adminCheck = createSupabaseAdminClient();
+      const { data: termType, error: termTypeError } = await adminCheck
+        .from("term_types")
+        .select("id")
+        .eq("id", payload.term_type_id as number)
+        .maybeSingle();
+
+      if (termTypeError) {
+        return jsonError(400, "VALIDATION_ERROR", `Unable to validate term_type_id: ${termTypeError.message}`);
+      }
+
+      if (!termType) {
+        return jsonError(422, "VALIDATION_ERROR", `term_type_id ${payload.term_type_id} does not exist in term_types.`);
+      }
+    }
+
     payload.created_by_user_id = auth.userId;
     payload.modified_by_user_id = auth.userId;
   }

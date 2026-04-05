@@ -103,6 +103,51 @@ function normalizeSlug(value: string) {
     .slice(0, 64);
 }
 
+function toOptionalInt(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isInteger(parsed)) {
+      return parsed;
+    }
+  }
+
+  throw new Error("Payload.term_type_id must be an integer or null.");
+}
+
+async function validateTermsForeignKeys(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  payload: Record<string, unknown>,
+) {
+  const termTypeId = toOptionalInt(payload.term_type_id);
+  payload.term_type_id = termTypeId;
+
+  if (termTypeId === null) {
+    return;
+  }
+
+  const { data, error } = await admin
+    .from("term_types")
+    .select("id")
+    .eq("id", termTypeId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to validate term_type_id: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`term_type_id ${termTypeId} does not exist in term_types.`);
+  }
+}
+
 function validateResourcePayload(resourceKey: string, payload: Record<string, unknown>) {
   if (resourceKey === "humor-flavors") {
     const title = typeof payload.title === "string" ? payload.title : "";
@@ -135,6 +180,7 @@ function validateResourcePayload(resourceKey: string, payload: Record<string, un
     payload.term = term;
     payload.definition = definition;
     payload.example = example;
+    payload.term_type_id = toOptionalInt(payload.term_type_id);
     delete payload.category;
   }
 
@@ -180,6 +226,9 @@ export async function createGenericRecord(formData: FormData) {
     }
 
     const admin = createSupabaseAdminClient();
+    if (resourceKey === "terms") {
+      await validateTermsForeignKeys(admin, payload);
+    }
     const { error } = await admin.from(resource.table).insert(payload);
 
     if (error) {
@@ -220,6 +269,9 @@ export async function updateGenericRecord(formData: FormData) {
     }
 
     const admin = createSupabaseAdminClient();
+    if (resourceKey === "terms") {
+      await validateTermsForeignKeys(admin, payload);
+    }
     const { error } = await admin.from(resource.table).update(payload).eq("id", rowId);
 
     if (error) {
