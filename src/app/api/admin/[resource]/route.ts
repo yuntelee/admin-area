@@ -168,6 +168,11 @@ export async function POST(request: Request, context: Context) {
     payload.modified_by_user_id = auth.userId;
   }
 
+  if (resource.key === "caption-examples") {
+    payload.created_by_user_id = auth.userId;
+    payload.modified_by_user_id = auth.userId;
+  }
+
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.from(resource.table).insert(payload).select("*").limit(1).single();
 

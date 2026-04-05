@@ -279,6 +279,10 @@ export async function createGenericRecord(formData: FormData) {
         : parsePayloadFromStructuredFields(formData);
     validateResourcePayload(resourceKey, payload);
 
+    if (resourceKey === "caption-examples") {
+      normalizeCaptionExamplesPayload(payload);
+    }
+
     if (resourceKey === "terms") {
       payload.created_by_user_id = user.id;
       payload.modified_by_user_id = user.id;
@@ -291,9 +295,6 @@ export async function createGenericRecord(formData: FormData) {
     const admin = createSupabaseAdminClient();
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
-    }
-    if (resourceKey === "caption-examples") {
-      normalizeCaptionExamplesPayload(payload);
     }
     const { error } = await admin.from(resource.table).insert(payload);
 
@@ -331,6 +332,10 @@ export async function updateGenericRecord(formData: FormData) {
     const payload = parsePayload(formData.get("payload"));
     validateResourcePayload(resourceKey, payload);
 
+    if (resourceKey === "caption-examples") {
+      normalizeCaptionExamplesPayload(payload);
+    }
+
     if (resourceKey === "terms") {
       payload.modified_by_user_id = user.id;
     }
@@ -341,9 +346,6 @@ export async function updateGenericRecord(formData: FormData) {
     const admin = createSupabaseAdminClient();
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
-    }
-    if (resourceKey === "caption-examples") {
-      normalizeCaptionExamplesPayload(payload);
     }
     const { error } = await admin.from(resource.table).update(payload).eq("id", rowId);
 
