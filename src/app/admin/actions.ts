@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { requireSuperadmin, requireSuperadminWithAccessToken } from "@/lib/auth";
 import { getResourceByKey } from "@/lib/admin/resources";
@@ -12,6 +13,12 @@ function addStatusToPath(path: string, type: "success" | "error", message: strin
   const encodedMessage = encodeURIComponent(message);
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}${type}=${encodedMessage}`;
+}
+
+function rethrowIfRedirect(error: unknown) {
+  if (isRedirectError(error)) {
+    throw error;
+  }
 }
 
 function parsePayload(value: FormDataEntryValue | null) {
@@ -244,6 +251,7 @@ export async function createGenericRecord(formData: FormData) {
     revalidatePath(returnPath);
     redirect(addStatusToPath(returnPath, "success", "Record created."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to create record.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -287,6 +295,7 @@ export async function updateGenericRecord(formData: FormData) {
     revalidatePath(returnPath);
     redirect(addStatusToPath(returnPath, "success", "Record updated."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to update record.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -320,6 +329,7 @@ export async function deleteGenericRecord(formData: FormData) {
     revalidatePath(returnPath);
     redirect(addStatusToPath(returnPath, "success", "Record deleted."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to delete record.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -427,6 +437,7 @@ export async function createOrUpdateImageRecord(formData: FormData) {
     revalidatePath(returnPath);
     redirect(addStatusToPath(returnPath, "success", "Image created."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to save image.";
     redirect(addStatusToPath(returnPath, "error", message));
   }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { requireSuperadmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -12,6 +13,12 @@ function addStatusToPath(path: string, type: "success" | "error", message: strin
   const encoded = encodeURIComponent(message);
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}${type}=${encoded}`;
+}
+
+function rethrowIfRedirect(error: unknown) {
+  if (isRedirectError(error)) {
+    throw error;
+  }
 }
 
 function normalizeSlug(value: string) {
@@ -120,6 +127,7 @@ export async function createHumorFlavor(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Humor flavor created."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to create humor flavor.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -164,6 +172,7 @@ export async function updateHumorFlavor(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Humor flavor updated."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to update humor flavor.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -189,6 +198,7 @@ export async function deleteHumorFlavor(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath("/dashboard/humor-flavors", "success", "Humor flavor deleted."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to delete humor flavor.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -255,6 +265,7 @@ export async function createHumorFlavorStep(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Humor flavor step created."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to create humor flavor step.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -317,6 +328,7 @@ export async function updateHumorFlavorStep(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Humor flavor step updated."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to update humor flavor step.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -342,6 +354,7 @@ export async function deleteHumorFlavorStep(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Humor flavor step deleted."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to delete humor flavor step.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
@@ -434,6 +447,7 @@ export async function moveHumorFlavorStep(formData: FormData) {
     revalidatePath("/dashboard/humor-flavors");
     redirect(addStatusToPath(returnPath, "success", "Step order updated."));
   } catch (error) {
+    rethrowIfRedirect(error);
     const message = error instanceof Error ? error.message : "Unable to reorder humor flavor step.";
     redirect(addStatusToPath(returnPath, "error", message));
   }
