@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireSuperadmin } from "@/lib/auth";
+import { requireSuperadmin, requireSuperadminWithAccessToken } from "@/lib/auth";
 import { getResourceByKey } from "@/lib/admin/resources";
+import { uploadAndRegisterImageWithPipeline } from "@/lib/pipeline/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 function addStatusToPath(path: string, type: "success" | "error", message: string) {
@@ -159,7 +160,7 @@ export async function createOrUpdateImageRecord(formData: FormData) {
   const returnPath = String(formData.get("returnPath") ?? "/admin/images");
 
   try {
-    await requireSuperadmin();
+    const { accessToken } = await requireSuperadminWithAccessToken();
     const mode = String(formData.get("mode") ?? "create");
     const rowId = String(formData.get("rowId") ?? "");
 
@@ -182,28 +183,19 @@ export async function createOrUpdateImageRecord(formData: FormData) {
 
     const fileEntry = formData.get("image_file");
     const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
+    let pipelineImageId: string | null = null;
 
     if (file) {
-      const admin = createSupabaseAdminClient();
-      const bucket = process.env.SUPABASE_IMAGE_BUCKET || "images";
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
-      const fileBuffer = new Uint8Array(await file.arrayBuffer());
-
-      const { error: uploadError } = await admin.storage.from(bucket).upload(storagePath, fileBuffer, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
+      const uploaded = await uploadAndRegisterImageWithPipeline({
+        accessToken,
+        file,
+        isCommonUse,
       });
 
-      if (uploadError) {
-        throw new Error(`Image upload failed: ${uploadError.message}`);
-      }
-
-      const { data: publicUrlData } = admin.storage.from(bucket).getPublicUrl(storagePath);
-      payload.url = publicUrlData.publicUrl;
-      payload.storage_path = storagePath;
-      payload.mime_type = file.type || null;
+      payload.url = uploaded.cdnUrl;
+      payload.mime_type = uploaded.contentType;
       payload.file_size_bytes = file.size;
+      pipelineImageId = uploaded.imageId;
     }
 
     if (!payload.url && mode === "create") {
@@ -220,12 +212,40 @@ export async function createOrUpdateImageRecord(formData: FormData) {
       if (error) {
         throw new Error(error.message);
       }
+      revalidatePath("/admin");
+      revalidatePath(returnPath);
       redirect(addStatusToPath(returnPath, "success", "Image updated."));
     }
 
-    const { error } = await admin.from("images").insert(payload);
-    if (error) {
-      throw new Error(error.message);
+    if (pipelineImageId) {
+      const { data: updatedRows, error: updateExistingError } = await admin
+        .from("images")
+        .update(payload)
+        .eq("id", pipelineImageId)
+        .select("id")
+        .limit(1);
+
+      if (updateExistingError) {
+        throw new Error(updateExistingError.message);
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        const { error: insertWithIdError } = await admin
+          .from("images")
+          .insert({ id: pipelineImageId, ...payload });
+
+        if (insertWithIdError) {
+          const { error: fallbackInsertError } = await admin.from("images").insert(payload);
+          if (fallbackInsertError) {
+            throw new Error(fallbackInsertError.message);
+          }
+        }
+      }
+    } else {
+      const { error } = await admin.from("images").insert(payload);
+      if (error) {
+        throw new Error(error.message);
+      }
     }
 
     revalidatePath("/admin");

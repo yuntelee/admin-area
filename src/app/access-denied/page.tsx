@@ -16,8 +16,11 @@ export default async function AccessDeniedPage({
         </p>
         <h1 className="mt-4 text-3xl font-semibold">Not authorized</h1>
         <p className="mt-4 text-sm leading-6 text-slate-300">
-          Only users with <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">is_superadmin = true</code> can
-          access the admin area. Contact the project owner if you need access.
+          Only users with
+          <code className="mx-1 rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">is_superadmin = true</code>
+          or
+          <code className="mx-1 rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">is_matrix_admin = true</code>
+          can access the admin area. Contact the project owner if you need access.
         </p>
         {reason && (
           <p className="mt-3 break-all rounded-xl bg-white/5 px-4 py-2 text-xs font-mono text-slate-400">

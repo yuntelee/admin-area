@@ -1,11 +1,11 @@
 import "server-only";
 
+import { generateCaptionsForImage } from "@/lib/pipeline/client";
+
 export type PromptChainGenerateInput = {
-  flavorId: string;
-  imageUrl: string;
-  imageDescription?: string;
-  flavor?: Record<string, unknown> | null;
-  steps?: Record<string, unknown>[];
+  accessToken: string;
+  imageId: string;
+  flavorId?: string;
 };
 
 export type PromptChainGenerateResult = {
@@ -13,13 +13,6 @@ export type PromptChainGenerateResult = {
   endpoint: string;
   raw: unknown;
 };
-
-const DEFAULT_API_BASE = "https://api.almostcrackd.ai";
-const ENDPOINT_CANDIDATES = [
-  "/captions/generate",
-  "/generate-captions",
-  "/api/captions/generate",
-];
 
 function normalizeBaseUrl(value: string) {
   return value.endsWith("/") ? value.slice(0, -1) : value;
@@ -104,79 +97,23 @@ function extractCaptions(payload: unknown): string[] {
   return fallbackSingle ? [fallbackSingle] : [];
 }
 
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-  if (!text) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return { raw: text };
-  }
-}
-
 export async function generateFlavorCaptionsViaApi(
   input: PromptChainGenerateInput,
 ): Promise<PromptChainGenerateResult> {
-  const base = normalizeBaseUrl(process.env.ALMOSTCRACKD_API_URL || DEFAULT_API_BASE);
-
-  const requestBody = {
-    image_url: input.imageUrl,
-    imageUrl: input.imageUrl,
-    image_description: input.imageDescription ?? null,
-    imageDescription: input.imageDescription ?? null,
-    humor_flavor_id: input.flavorId,
+  const raw = await generateCaptionsForImage({
+    accessToken: input.accessToken,
+    imageId: input.imageId,
     humorFlavorId: input.flavorId,
-    flavor: input.flavor ?? null,
-    steps: input.steps ?? [],
-  };
+  });
 
-  const errors: string[] = [];
-
-  for (const endpoint of ENDPOINT_CANDIDATES) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-
-    try {
-      const response = await fetch(`${base}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-        cache: "no-store",
-      });
-
-      const payload = await parseJsonSafely(response);
-      if (!response.ok) {
-        const message = asObject(payload)?.message;
-        errors.push(
-          `${endpoint}: ${typeof message === "string" ? message : `HTTP ${response.status}`}`,
-        );
-        continue;
-      }
-
-      const captions = extractCaptions(payload);
-      if (captions.length === 0) {
-        errors.push(`${endpoint}: no captions returned in response body`);
-        continue;
-      }
-
-      return {
-        captions,
-        endpoint: `${base}${endpoint}`,
-        raw: payload,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown request error";
-      errors.push(`${endpoint}: ${message}`);
-    } finally {
-      clearTimeout(timeout);
-    }
+  const captions = extractCaptions(raw);
+  if (captions.length === 0) {
+    throw new Error("Pipeline generated no captions.");
   }
 
-  throw new Error(`Caption generation failed. Tried endpoints: ${errors.join(" | ")}`);
+  return {
+    captions,
+    endpoint: `${normalizeBaseUrl(process.env.ALMOSTCRACKD_API_URL || "https://api.almostcrackd.ai")}/pipeline/generate-captions`,
+    raw,
+  };
 }

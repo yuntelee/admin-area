@@ -47,14 +47,26 @@ function ImageForm({
         {image && <input type="hidden" name="id" value={image.id} />}
 
         <label className="block space-y-1">
-          <span className="text-xs text-slate-400">URL *</span>
+          <span className="text-xs text-slate-400">URL</span>
           <input
             name="url"
-            required
             defaultValue={image?.url ?? ""}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400"
             placeholder="https://…"
           />
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-xs text-slate-400">Upload Image</span>
+          <input
+            type="file"
+            name="image_file"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-500/20 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-emerald-300"
+          />
+          <p className="text-xs text-slate-500">
+            Supported: jpeg, jpg, png, webp, gif, heic. File upload uses the caption pipeline.
+          </p>
         </label>
 
         <label className="block space-y-1">

@@ -2,51 +2,23 @@ import { NextResponse } from "next/server";
 
 import { requireApiSuperadmin } from "@/lib/admin/api-auth";
 import { generateFlavorCaptionsViaApi } from "@/lib/prompt-chain/generate";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-const STEP_ORDER_CANDIDATES = ["step_order", "step_number", "order_index", "sequence", "position"];
-
-type StepRecord = Record<string, unknown>;
-
-function extractStepOrder(step: StepRecord, index: number) {
-  for (const key of STEP_ORDER_CANDIDATES) {
-    const value = step[key];
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-  }
-  return index + 1;
-}
-
-async function loadFlavorSteps(admin: ReturnType<typeof createSupabaseAdminClient>, flavorId: string) {
-  for (const orderColumn of STEP_ORDER_CANDIDATES) {
-    const { data, error } = await admin
-      .from("humor_flavor_steps")
-      .select("*")
-      .eq("humor_flavor_id", flavorId)
-      .order(orderColumn, { ascending: true });
-
-    if (!error) {
-      return (data ?? []) as StepRecord[];
-    }
-  }
-
-  const { data } = await admin
-    .from("humor_flavor_steps")
-    .select("*")
-    .eq("humor_flavor_id", flavorId);
-
-  return ((data ?? []) as StepRecord[]).sort((a, b) => {
-    const aOrder = extractStepOrder(a, 0);
-    const bOrder = extractStepOrder(b, 0);
-    return aOrder - bOrder;
-  });
-}
 
 export async function POST(request: Request) {
   const auth = await requireApiSuperadmin();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  if (!auth.accessToken) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "ACCESS_TOKEN_UNAVAILABLE",
+          message: "A valid JWT access token is required to call the caption pipeline.",
+        },
+      },
+      { status: 401 },
+    );
   }
 
   let body: Record<string, unknown>;
@@ -59,46 +31,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const imageId = String(body.imageId ?? "").trim();
   const flavorId = String(body.flavorId ?? "").trim();
-  const imageUrl = String(body.imageUrl ?? "").trim();
-  const imageDescription = String(body.imageDescription ?? "").trim();
 
-  if (!flavorId) {
+  if (!imageId) {
     return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "flavorId is required." } },
+      { error: { code: "VALIDATION_ERROR", message: "imageId is required." } },
       { status: 422 },
-    );
-  }
-
-  if (!imageUrl) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "imageUrl is required." } },
-      { status: 422 },
-    );
-  }
-
-  const admin = createSupabaseAdminClient();
-  const { data: flavor, error: flavorError } = await admin
-    .from("humor_flavors")
-    .select("*")
-    .eq("id", flavorId)
-    .maybeSingle();
-
-  if (flavorError || !flavor) {
-    return NextResponse.json(
-      { error: { code: "NOT_FOUND", message: "Humor flavor not found." } },
-      { status: 404 },
     );
   }
 
   try {
-    const steps = await loadFlavorSteps(admin, flavorId);
     const generated = await generateFlavorCaptionsViaApi({
-      flavorId,
-      imageUrl,
-      imageDescription: imageDescription || undefined,
-      flavor,
-      steps,
+      accessToken: auth.accessToken,
+      imageId,
+      flavorId: flavorId || undefined,
     });
 
     return NextResponse.json({

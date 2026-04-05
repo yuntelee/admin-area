@@ -26,8 +26,7 @@ type TestResponse = {
 
 export default function PromptChainTester({ flavors, selectedFlavorId }: Props) {
   const [flavorId, setFlavorId] = useState(selectedFlavorId);
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageDescription, setImageDescription] = useState("");
+  const [imageId, setImageId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [captions, setCaptions] = useState<string[]>([]);
@@ -48,8 +47,7 @@ export default function PromptChainTester({ flavors, selectedFlavorId }: Props) 
         },
         body: JSON.stringify({
           flavorId,
-          imageUrl,
-          imageDescription,
+          imageId,
         }),
       });
 
@@ -72,7 +70,7 @@ export default function PromptChainTester({ flavors, selectedFlavorId }: Props) 
     <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <h2 className="text-lg font-semibold">Test Humor Flavor</h2>
       <p className="mt-1 text-xs text-slate-400">
-        Generate captions via api.almostcrackd.ai for quick prompt-chain validation.
+        Generate captions via the pipeline API using a registered image id.
       </p>
 
       <form onSubmit={onSubmit} className="mt-3 grid gap-3 lg:grid-cols-2">
@@ -93,25 +91,14 @@ export default function PromptChainTester({ flavors, selectedFlavorId }: Props) 
         </label>
 
         <label className="space-y-1 text-xs text-slate-300">
-          Image URL
+          Image ID
           <input
-            type="url"
+            type="text"
             required
-            value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
-            placeholder="https://example.com/image.jpg"
+            value={imageId}
+            onChange={(event) => setImageId(event.target.value)}
+            placeholder="uuid-from-upload-image-from-url"
             className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-          />
-        </label>
-
-        <label className="space-y-1 text-xs text-slate-300 lg:col-span-2">
-          Optional Image Description
-          <textarea
-            value={imageDescription}
-            onChange={(event) => setImageDescription(event.target.value)}
-            rows={2}
-            className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
-            placeholder="Add extra context for testing"
           />
         </label>
 
