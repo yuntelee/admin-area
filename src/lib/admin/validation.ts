@@ -55,6 +55,49 @@ export function validatePayload(resourceKey: string, payload: Record<string, unk
     delete payload.category;
   }
 
+  if (resourceKey === "caption-examples") {
+    const text = [payload.caption, payload.example_text, payload.content, payload.text, payload.example]
+      .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+
+    if (!text) {
+      throw new Error("Payload.caption is required for caption examples.");
+    }
+
+    const explanation = [payload.explanation, payload.notes, payload.note, payload.context]
+      .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+
+    payload.caption = text.trim();
+    if (explanation) {
+      payload.explanation = explanation.trim();
+    }
+
+    if (payload.priority !== undefined && payload.priority !== null && payload.priority !== "") {
+      const parsedPriority = Number(payload.priority);
+      if (!Number.isInteger(parsedPriority)) {
+        throw new Error("Payload.priority must be an integer.");
+      }
+      payload.priority = parsedPriority;
+    }
+
+    if (payload.image_id !== undefined && payload.image_id !== null && payload.image_id !== "") {
+      payload.image_id = String(payload.image_id).trim();
+    }
+
+    delete payload.id;
+    delete payload.created_datetime_utc;
+    delete payload.modified_datetime_utc;
+    delete payload.created_by_user_id;
+    delete payload.modified_by_user_id;
+    delete payload.example_text;
+    delete payload.content;
+    delete payload.text;
+    delete payload.example;
+    delete payload.notes;
+    delete payload.note;
+    delete payload.context;
+    delete payload.is_active;
+  }
+
   if (resourceKey === "allowed-signup-domains") {
     const domain = String(payload.domain ?? "").trim().toLowerCase();
     if (!domain || !validateDomain(domain)) {
