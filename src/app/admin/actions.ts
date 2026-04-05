@@ -30,6 +30,62 @@ function parsePayload(value: FormDataEntryValue | null) {
   }
 }
 
+function parseScalarByType(value: string, type: string) {
+  if (type === "boolean") {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`Invalid boolean value: ${value}`);
+  }
+
+  if (type === "number") {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      throw new Error(`Invalid number value: ${value}`);
+    }
+    return parsed;
+  }
+
+  if (type === "json") {
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      throw new Error("One of the JSON field values is invalid.");
+    }
+  }
+
+  return value;
+}
+
+function parsePayloadFromStructuredFields(formData: FormData) {
+  const payload: Record<string, unknown> = {};
+
+  for (const [key, rawValue] of formData.entries()) {
+    if (!key.startsWith("field__")) {
+      continue;
+    }
+
+    if (typeof rawValue !== "string") {
+      continue;
+    }
+
+    const fieldName = key.slice("field__".length);
+    const value = rawValue.trim();
+    if (!fieldName || value === "") {
+      continue;
+    }
+
+    const typeEntry = formData.get(`field_type__${fieldName}`);
+    const type = typeof typeEntry === "string" ? typeEntry : "string";
+    payload[fieldName] = parseScalarByType(value, type);
+  }
+
+  if (Object.keys(payload).length === 0) {
+    throw new Error("Provide at least one field value or a JSON payload.");
+  }
+
+  return payload;
+}
+
 function validateDomain(domain: string) {
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain);
 }
@@ -111,7 +167,11 @@ export async function createGenericRecord(formData: FormData) {
       throw new Error("Resource is not createable.");
     }
 
-    const payload = parsePayload(formData.get("payload"));
+    const rawPayload = formData.get("payload");
+    const payload =
+      typeof rawPayload === "string" && rawPayload.trim()
+        ? parsePayload(rawPayload)
+        : parsePayloadFromStructuredFields(formData);
     validateResourcePayload(resourceKey, payload);
 
     const admin = createSupabaseAdminClient();

@@ -21,6 +21,15 @@ type ResourcePageProps = {
   }>;
 };
 
+type CreateFieldType = "string" | "number" | "boolean" | "json";
+
+type CreateField = {
+  name: string;
+  type: CreateFieldType;
+  example: string;
+  defaultValue: string;
+};
+
 const PAGE_SIZE = 25;
 
 function encodeSearchTerm(value: string) {
@@ -52,6 +61,85 @@ function getDefaultPayload(row: Record<string, unknown>) {
   const payload = { ...row };
   delete payload.id;
   return JSON.stringify(payload, null, 2);
+}
+
+function isSystemColumn(column: string) {
+  return [
+    "id",
+    "created_datetime_utc",
+    "modified_datetime_utc",
+    "created_at",
+    "updated_at",
+    "created_by_user_id",
+    "modified_by_user_id",
+  ].includes(column);
+}
+
+function inferFieldType(value: unknown): CreateFieldType {
+  if (typeof value === "boolean") {
+    return "boolean";
+  }
+
+  if (typeof value === "number") {
+    return "number";
+  }
+
+  if (value && typeof value === "object") {
+    return "json";
+  }
+
+  return "string";
+}
+
+function toFieldValue(value: unknown, type: CreateFieldType) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (type === "json") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+
+  return String(value);
+}
+
+function buildCreateFields(samplePayload: Record<string, unknown> | undefined, firstRow: Record<string, unknown> | undefined) {
+  const fields: CreateField[] = [];
+  const seen = new Set<string>();
+
+  const addField = (name: string, value: unknown) => {
+    if (!name || seen.has(name) || isSystemColumn(name)) {
+      return;
+    }
+
+    const type = inferFieldType(value);
+    const strValue = toFieldValue(value, type);
+    fields.push({
+      name,
+      type,
+      example: strValue,
+      defaultValue: strValue,
+    });
+    seen.add(name);
+  };
+
+  if (samplePayload) {
+    for (const [name, value] of Object.entries(samplePayload)) {
+      addField(name, value);
+    }
+  }
+
+  if (firstRow) {
+    for (const [name, value] of Object.entries(firstRow)) {
+      addField(name, value);
+    }
+  }
+
+  return fields;
 }
 
 export default async function AdminResourcePage({ params, searchParams }: ResourcePageProps) {
@@ -104,7 +192,9 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
   }
 
   const rows = (data ?? []) as Record<string, unknown>[];
+  const firstRow = rows[0];
   const columns = getColumnKeys(rows);
+  const createFields = buildCreateFields(resource.samplePayload, firstRow);
   const totalCount = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -160,16 +250,65 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
       {resource.mode === "crud" && (
         <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <h2 className="text-lg font-semibold">Create Record</h2>
-          <p className="mt-1 text-xs text-slate-400">Provide JSON payload.</p>
-          <form action={createGenericRecord} className="mt-3 space-y-3">
+          <p className="mt-1 text-xs text-slate-400">Fill fields below. Advanced JSON is optional.</p>
+          <form action={createGenericRecord} className="mt-3 space-y-4">
             <input type="hidden" name="resourceKey" value={resource.key} />
             <input type="hidden" name="returnPath" value={resourcePath} />
-            <textarea
-              name="payload"
-              rows={8}
-              defaultValue={JSON.stringify(resource.samplePayload ?? { name: "example" }, null, 2)}
-              className="w-full rounded-lg border border-white/15 bg-slate-900 p-3 font-mono text-xs text-slate-200"
-            />
+
+            {createFields.length > 0 ? (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {createFields.map((field) => (
+                  <label key={field.name} className="space-y-1 text-xs text-slate-300">
+                    {field.name}
+                    <input type="hidden" name={`field_type__${field.name}`} value={field.type} />
+
+                    {field.type === "json" ? (
+                      <textarea
+                        name={`field__${field.name}`}
+                        rows={3}
+                        defaultValue={field.defaultValue}
+                        placeholder={field.example || "{}"}
+                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 font-mono text-xs text-white"
+                      />
+                    ) : field.type === "boolean" ? (
+                      <select
+                        name={`field__${field.name}`}
+                        defaultValue={field.defaultValue || ""}
+                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                      >
+                        <option value="">(leave empty)</option>
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        name={`field__${field.name}`}
+                        defaultValue={field.defaultValue}
+                        placeholder={field.example}
+                        className="w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-white"
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">
+                No field examples available yet. Use the advanced JSON box below.
+              </p>
+            )}
+
+            <details className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+              <summary className="cursor-pointer text-xs font-semibold text-slate-300">Advanced JSON payload</summary>
+              <textarea
+                name="payload"
+                rows={8}
+                defaultValue=""
+                placeholder={JSON.stringify(resource.samplePayload ?? { name: "example" }, null, 2)}
+                className="mt-3 w-full rounded-lg border border-white/15 bg-slate-900 p-3 font-mono text-xs text-slate-200"
+              />
+            </details>
+
             <button
               type="submit"
               className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-400"
