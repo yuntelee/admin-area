@@ -8,6 +8,7 @@ import { requireSuperadmin, requireSuperadminWithAccessToken } from "@/lib/auth"
 import { getResourceByKey } from "@/lib/admin/resources";
 import { uploadAndRegisterImageWithPipeline } from "@/lib/pipeline/client";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function addStatusToPath(path: string, type: "success" | "error", message: string) {
   const encodedMessage = encodeURIComponent(message);
@@ -18,6 +19,46 @@ function addStatusToPath(path: string, type: "success" | "error", message: strin
 function rethrowIfRedirect(error: unknown) {
   if (isRedirectError(error)) {
     throw error;
+  }
+}
+
+function isAuditNullConstraintError(message: string) {
+  return /null value in column "(created_by_user_id|modified_by_user_id)"/i.test(message);
+}
+
+async function insertWithAuditFallback(table: string, payload: Record<string, unknown>) {
+  const admin = createSupabaseAdminClient();
+  const first = await admin.from(table).insert(payload);
+  if (!first.error) {
+    return;
+  }
+
+  if (!isAuditNullConstraintError(first.error.message)) {
+    throw new Error(first.error.message);
+  }
+
+  const userClient = await createSupabaseServerClient();
+  const retry = await userClient.from(table).insert(payload);
+  if (retry.error) {
+    throw new Error(retry.error.message);
+  }
+}
+
+async function updateWithAuditFallback(table: string, rowId: string, payload: Record<string, unknown>) {
+  const admin = createSupabaseAdminClient();
+  const first = await admin.from(table).update(payload).eq("id", rowId);
+  if (!first.error) {
+    return;
+  }
+
+  if (!isAuditNullConstraintError(first.error.message)) {
+    throw new Error(first.error.message);
+  }
+
+  const userClient = await createSupabaseServerClient();
+  const retry = await userClient.from(table).update(payload).eq("id", rowId);
+  if (retry.error) {
+    throw new Error(retry.error.message);
   }
 }
 
@@ -296,11 +337,8 @@ export async function createGenericRecord(formData: FormData) {
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
     }
-    const { error } = await admin.from(resource.table).insert(payload);
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    await insertWithAuditFallback(resource.table, payload);
 
     revalidatePath("/admin");
     revalidatePath(returnPath);
@@ -347,11 +385,8 @@ export async function updateGenericRecord(formData: FormData) {
     if (resourceKey === "terms") {
       await validateTermsForeignKeys(admin, payload);
     }
-    const { error } = await admin.from(resource.table).update(payload).eq("id", rowId);
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    await updateWithAuditFallback(resource.table, rowId, payload);
 
     revalidatePath("/admin");
     revalidatePath(returnPath);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getResourceByKey } from "@/lib/admin/resources";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireApiSuperadmin } from "@/lib/admin/api-auth";
 import { validatePayload } from "@/lib/admin/validation";
 
@@ -37,6 +38,10 @@ function toOptionalInt(value: unknown) {
   }
 
   throw new Error("term_type_id must be an integer or null.");
+}
+
+function isAuditNullConstraintError(message: string) {
+  return /null value in column "(created_by_user_id|modified_by_user_id)"/i.test(message);
 }
 
 export async function GET(request: Request, context: Context) {
@@ -174,11 +179,21 @@ export async function POST(request: Request, context: Context) {
   }
 
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.from(resource.table).insert(payload).select("*").limit(1).single();
+  const firstInsert = await admin.from(resource.table).insert(payload).select("*").limit(1).single();
 
-  if (error) {
-    return jsonError(400, "INSERT_ERROR", error.message);
+  if (!firstInsert.error) {
+    return NextResponse.json({ data: firstInsert.data }, { status: 201 });
   }
 
-  return NextResponse.json({ data }, { status: 201 });
+  if (!isAuditNullConstraintError(firstInsert.error.message)) {
+    return jsonError(400, "INSERT_ERROR", firstInsert.error.message);
+  }
+
+  const userClient = await createSupabaseServerClient();
+  const retryInsert = await userClient.from(resource.table).insert(payload).select("*").limit(1).single();
+  if (retryInsert.error) {
+    return jsonError(400, "INSERT_ERROR", retryInsert.error.message);
+  }
+
+  return NextResponse.json({ data: retryInsert.data }, { status: 201 });
 }
