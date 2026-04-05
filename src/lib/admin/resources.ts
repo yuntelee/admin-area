@@ -56,17 +56,15 @@ export const ADMIN_RESOURCES: AdminResource[] = [
   },
   {
     key: "humor-mix",
-    label: "Humor Mix",
-    table: "humor_mix",
+    label: "Humor Flavor Mix",
+    table: "humor_flavor_mix",
     mode: "read-update",
     section: "Humor",
-    description: "Read and update humor mix records.",
-    searchColumns: ["name", "slug"],
+    description: "Read and update humor flavor mix records.",
     orderBy: "id",
     samplePayload: {
-      name: "default",
-      is_active: true,
-      weights: { dry: 0.5, absurd: 0.5 },
+      humor_flavor_id: 1,
+      caption_count: 3,
     },
   },
   {
