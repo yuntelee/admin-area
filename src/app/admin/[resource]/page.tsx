@@ -367,7 +367,7 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
         <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <h2 className="text-lg font-semibold">Create Image</h2>
           <p className="mt-1 text-xs text-slate-400">Upload a file or provide a URL.</p>
-          <form action={createOrUpdateImageRecord} className="mt-3 grid gap-3 lg:grid-cols-2">
+          <form action={createOrUpdateImageRecord} encType="multipart/form-data" className="mt-3 grid gap-3 lg:grid-cols-2">
             <input type="hidden" name="mode" value="create" />
             <input type="hidden" name="returnPath" value={resourcePath} />
 
@@ -500,7 +500,7 @@ export default async function AdminResourcePage({ params, searchParams }: Resour
                 ) : null}
 
                 {resource.mode === "images-crud" ? (
-                  <form action={createOrUpdateImageRecord} className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <form action={createOrUpdateImageRecord} encType="multipart/form-data" className="mt-4 grid gap-3 lg:grid-cols-2">
                     <input type="hidden" name="mode" value="update" />
                     <input type="hidden" name="rowId" value={rowId} />
                     <input type="hidden" name="returnPath" value={resourcePath} />

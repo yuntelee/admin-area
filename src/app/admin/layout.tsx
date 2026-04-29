@@ -12,8 +12,8 @@ export default async function AdminLayout({
   const sections = getResourceSections();
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white">
-      <aside className="sticky top-0 h-screen w-80 shrink-0 overflow-y-auto border-r border-white/10 bg-slate-900/70 p-4">
+    <div className="flex min-h-screen bg-background text-foreground">
+      <aside className="sticky top-0 h-screen w-80 shrink-0 overflow-y-auto border-r border-white/10 bg-background/85 p-4 backdrop-blur">
         <div className="mb-6 border-b border-white/10 pb-4">
           <Link href="/admin" className="text-xl font-bold tracking-tight">
             Admin Area
