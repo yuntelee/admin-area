@@ -110,3 +110,93 @@ html[data-theme="light"] .text-rose-300,
 html[data-theme="light"] .text-rose-400 {
   color: #be123c !important;
 }
+
+.landing-page {
+  background:
+    radial-gradient(circle at top, #1f2937 0%, #0f172a 35%, #020617 100%);
+  color: #e2e8f0;
+}
+
+.landing-page .landing-chip {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.landing-page .landing-heading {
+  color: #ffffff;
+}
+
+.landing-page .landing-copy {
+  color: #cbd5e1;
+}
+
+.landing-page .landing-badge {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+.landing-page .landing-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.landing-page .landing-label {
+  color: #6ee7b7;
+}
+
+.landing-page .landing-callout {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(2, 6, 23, 0.3);
+  color: #cbd5e1;
+}
+
+.landing-page .landing-link {
+  color: #ffffff;
+}
+
+html[data-theme="light"] .landing-page {
+  background:
+    radial-gradient(circle at top, #ffffff 0%, #e2e8f0 45%, #cbd5e1 100%);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .landing-page .landing-chip {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  color: #334155;
+}
+
+html[data-theme="light"] .landing-page .landing-heading {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .landing-page .landing-copy,
+html[data-theme="light"] .landing-page .landing-badge,
+html[data-theme="light"] .landing-page .landing-callout {
+  color: #334155;
+}
+
+html[data-theme="light"] .landing-page .landing-badge {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .landing-page .landing-card {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+html[data-theme="light"] .landing-page .landing-label {
+  color: #047857;
+}
+
+html[data-theme="light"] .landing-page .landing-callout {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+html[data-theme="light"] .landing-page .landing-link {
+  color: #0f172a;
+}
