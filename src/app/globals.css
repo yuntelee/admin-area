@@ -164,8 +164,8 @@ html[data-theme="light"] .landing-page {
 
 html[data-theme="light"] .landing-page .landing-chip {
   border-color: rgba(15, 23, 42, 0.12);
-  background: rgba(15, 23, 42, 0.04);
-  color: #334155;
+  background: rgba(15, 23, 42, 0.06);
+  color: #1e293b;
 }
 
 html[data-theme="light"] .landing-page .landing-heading {
@@ -175,17 +175,17 @@ html[data-theme="light"] .landing-page .landing-heading {
 html[data-theme="light"] .landing-page .landing-copy,
 html[data-theme="light"] .landing-page .landing-badge,
 html[data-theme="light"] .landing-page .landing-callout {
-  color: #334155;
+  color: #1e293b;
 }
 
 html[data-theme="light"] .landing-page .landing-badge {
   border-color: rgba(15, 23, 42, 0.12);
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .landing-page .landing-card {
   border-color: rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 html[data-theme="light"] .landing-page .landing-label {
@@ -194,9 +194,27 @@ html[data-theme="light"] .landing-page .landing-label {
 
 html[data-theme="light"] .landing-page .landing-callout {
   border-color: rgba(15, 23, 42, 0.12);
-  background: rgba(15, 23, 42, 0.03);
+  background: rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .landing-page .landing-link {
   color: #0f172a;
+}
+
+html[data-theme="light"] .landing-theme-toggle .inline-flex {
+  border-color: rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme="light"] .landing-theme-toggle button {
+  color: #1e293b;
+}
+
+html[data-theme="light"] .landing-theme-toggle button:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .landing-theme-toggle button.bg-emerald-500\/80 {
+  color: #052e16;
 }

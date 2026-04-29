@@ -18,7 +18,7 @@ export default async function Home() {
     <main className="landing-page relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:56px_56px] opacity-20" />
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16 lg:px-8">
-        <div className="mb-8 flex justify-end">
+        <div className="landing-theme-toggle mb-8 flex justify-end">
           <ThemeToggle />
         </div>
         <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.9fr]">
