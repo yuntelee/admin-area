@@ -67,7 +67,7 @@ export function GoogleSignInButton() {
         type="button"
         onClick={handleSignIn}
         disabled={loading}
-        className="flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-base font-semibold text-slate-950 transition hover:scale-[1.01] hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-80"
+        className="google-signin-btn flex w-full items-center justify-center rounded-2xl px-5 py-4 text-base font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-80"
       >
         {loading ? "Redirecting..." : "Continue with Google"}
       </button>

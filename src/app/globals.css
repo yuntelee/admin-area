@@ -218,3 +218,23 @@ html[data-theme="light"] .landing-theme-toggle button:hover {
 html[data-theme="light"] .landing-theme-toggle button.bg-emerald-500\/80 {
   color: #052e16;
 }
+
+.google-signin-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+}
+
+.google-signin-btn:hover {
+  background: #ffffff;
+}
+
+html[data-theme="light"] .google-signin-btn {
+  border-color: rgba(15, 23, 42, 0.2);
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+html[data-theme="light"] .google-signin-btn:hover {
+  background: #1e293b;
+}
